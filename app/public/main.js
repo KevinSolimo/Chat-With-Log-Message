@@ -64,17 +64,45 @@ $(function() {
   // Adds the visual chat message to the message list
   const addChatMessage = (data, options) => {
       
-    var $usernameDiv = $('<span class="username"/>')
-      .text(data.username)
-      .css('color', getUsernameColor(data.username));
-    var $messageBodyDiv = $('<span class="messageBody">')
-      .text(data.message);
+      console.log(data);
       
-    var $messageDiv = $('<li class="message"/>')
-      .data('username', data.username)
-      .append($usernameDiv, $messageBodyDiv);
+      if(! data.message.search("casa")){
+          socket.emit('ban word', data.username);
+          console.log(data.username);
+          return;
+      }
+      
+      var to = data.message.split("#");
+      
+      if(to.length > 1){
+        if(to[0] != $usernameInput.val()){
+        }else{
+          var $usernameDiv = $('<span class="username"/>')
+            .text(data.username)
+            .css('color', getUsernameColor(data.username));
+          var $messageBodyDiv = $('<span class="messageBody">')
+            .text(to[1])
+            .css('color', 'red')
+          var $messageDiv = $('<li class="message"/>')
+            .data('username', data.username)
+            .append($usernameDiv, $messageBodyDiv);
 
-    addMessageElement($messageDiv, options);
+          addMessageElement($messageDiv, options);
+        }
+      }else{
+        var $usernameDiv = $('<span class="username"/>')
+          .text(data.username)
+          .css('color', getUsernameColor(data.username));
+        var $messageBodyDiv = $('<span class="messageBody">')
+          .text(data.message);
+          
+        var $messageDiv = $('<li class="message"/>')
+          .data('username', data.username)
+          .append($usernameDiv, $messageBodyDiv);
+
+        addMessageElement($messageDiv, options);
+      
+     }
   }
   
   // Adds a message element to the messages and scrolls to the bottom
@@ -127,7 +155,6 @@ $(function() {
     if (event.which === 13) {
       if (username) {
         sendMessage();
-        socket.emit('stop typing');
       } else {
         setUsername();
       }
@@ -147,7 +174,9 @@ $(function() {
   });
 
   // Socket events
-
+  socket.on('change banner', (data) => {
+    document.getElementsByTagName("img")[0].setAttribute("src", "img/banner" + data.n + ".PNG");
+  });
   // Whenever the server emits 'login', log the login message
   socket.on('login', (data) => {
     connected = true;
@@ -160,7 +189,7 @@ $(function() {
 
   // Whenever the server emits 'user joined', log it in the chat body
   socket.on('user joined', (data) => {
-    log(data.username + ' joined');
+    log('è entrato :' + data.username);
   });
 
   // Whenever the server emits 'user left', log it in the chat body
@@ -170,6 +199,7 @@ $(function() {
 
   socket.on('disconnect', () => {
     log('you have been disconnected');
+    $inputMessage[0].disabled = true;
   });
 
   socket.on('reconnect', () => {
@@ -181,6 +211,16 @@ $(function() {
 
   socket.on('reconnect_error', () => {
     log('attempt to reconnect has failed');
+  });
+  
+  socket.on('ban', (username) => {
+    
+    if(username ==  this.username){
+        
+        socket.disconnect();
+        
+    }
+      
   });
 
 });
